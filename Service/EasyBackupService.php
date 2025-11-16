@@ -251,6 +251,9 @@ class EasyBackupService
     $this->log(self::LOG_INFO_PREFIX, "Remove temp file '$sqlDumpName'.");
     $this->filesystem->remove($sqlDumpName);
 
+    $this->log(self::LOG_INFO_PREFIX, $this->configuration->isS3Enabled());
+    $this->log(self::LOG_INFO_PREFIX, $this->s3Storage->isEnabled());
+
     // Upload to S3 if enabled
     if ($this->configuration->isS3Enabled() && $this->s3Storage->isEnabled()) {
       try {
