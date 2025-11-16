@@ -22,7 +22,7 @@ class S3StorageService
 {
   private ?Filesystem $filesystem = null;
   private string $s3Path;
-  private bool $enabled = false;
+  private bool $enabled = true;
 
   public function __construct()
   {
