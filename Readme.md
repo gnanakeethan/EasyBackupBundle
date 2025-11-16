@@ -2,6 +2,8 @@
 
 A Kimai 2 plugin, which allows you to backup your environment with a single click or via cronjob / command line.
 
+**NEW:** Now with Amazon S3 and S3-compatible storage support! See [S3_SETUP.md](S3_SETUP.md) for details.
+
 If you like the plugin, please feel free to donate me a coffee. I use my precious free time to operate and improve the plugin and don't earn any money from it.
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate?hosted_button_id=XQD3PMPANZNG4)
@@ -11,6 +13,18 @@ by clicking the `Create Backup` button. Afterwards all created backups will be l
 and you can delete or download the created backup as zip file.
 
 ![Kimai2 Easy Backup Plugin Bundle](https://github.com/mxgross/EasyBackupBundle/blob/main/screenshot.jpg?raw=true)
+
+### Features
+
+- ✅ One-click backup creation
+- ✅ Backup and restore database (MySQL/MariaDB/SQLite)
+- ✅ Backup files and directories
+- ✅ Download backups as ZIP files
+- ✅ Automatic cleanup of old backups
+- ✅ Command line / cronjob support
+- ✅ **NEW: Amazon S3 and S3-compatible storage support**
+- ✅ **NEW: Backup to local filesystem and S3 simultaneously**
+- ✅ **NEW: Download and delete backups from S3**
 
 ### Installation
 
@@ -59,6 +73,34 @@ You could also [download it as zip](https://github.com/mxgross/EasyBackupBundle/
 Feel free to participate in existing issues or create a issue for any new inquiry.
 
 ## Storage
+
+### S3 Storage (New!)
+
+The plugin now supports storing backups in Amazon S3 or S3-compatible storage services (MinIO, DigitalOcean Spaces, Wasabi, etc.).
+
+To enable S3 storage:
+
+1. Install the required dependencies:
+   ```bash
+   cd /kimai
+   composer require league/flysystem:^3.0 league/flysystem-aws-s3-v3:^3.0
+   ```
+
+2. Configure environment variables in your `.env` file:
+   ```bash
+   S3_ACCESS_KEY=your-access-key
+   S3_SECRET_KEY=your-secret-key
+   S3_BUCKET=your-bucket-name
+   S3_REGION=us-east-1
+   # Optional: For S3-compatible services
+   S3_ENDPOINT=https://your-custom-endpoint.com
+   ```
+
+3. Configure the "S3 Path" in Kimai's system settings under EasyBackup Config
+
+**For detailed S3 setup instructions, see [S3_SETUP.md](S3_SETUP.md)**
+
+### Local Storage
 
 This bundle stores the backups by default zipped inside the Kimai directory in `var/easy_backup`.
 Make sure its writable by your webserver! We don't use the recommended 

@@ -11,6 +11,7 @@ namespace KimaiPlugin\EasyBackupBundle\Controller;
 
 use App\Controller\AbstractController;
 use KimaiPlugin\EasyBackupBundle\Configuration\EasyBackupConfiguration;
+use KimaiPlugin\EasyBackupBundle\Service\S3StorageService;
 use KimaiPlugin\EasyBackupBundle\Service\EasyBackupService;
 use PhpOffice\PhpWord\Shared\ZipArchive;
 use Symfony\Component\Filesystem\Filesystem;
@@ -60,13 +61,24 @@ final class EasyBackupController extends AbstractController
      */
     private $easyBackupService;
 
-    public function __construct(string $dataDirectory, EasyBackupConfiguration $configuration, EasyBackupService $easyBackupService)
+    /**
+     * @var S3StorageService
+     */
+    private $s3Storage;
+
+    public function __construct(string $dataDirectory, EasyBackupConfiguration $configuration, EasyBackupService $easyBackupService, S3StorageService $s3Storage)
     {
         $this->kimaiRootPath = \dirname(\dirname($dataDirectory)) . DIRECTORY_SEPARATOR;
         $this->configuration = $configuration;
         $this->dbUrl = $_SERVER['DATABASE_URL'];
         $this->filesystem = new Filesystem();
         $this->easyBackupService = $easyBackupService;
+        $this->s3Storage = $s3Storage;
+
+        // Configure S3 path if enabled
+        if ($this->configuration->isS3Enabled()) {
+            $this->s3Storage->setS3Path($this->configuration->getS3Path());
+        }
     }
 
     private function log(string $logLevel, string $message): void
@@ -146,20 +158,40 @@ final class EasyBackupController extends AbstractController
         $this->denyAccessUnlessGranted('easy_backup');
 
         $backupName = $request->query->get('backupFilename');
+        $location = $request->query->get('location', 'local');
 
         // Validate the given user input (filename)
 
         if (preg_match(self::REGEX_BACKUP_ZIP_NAME, $backupName)) {
-            $zipNameAbsolute = $this->getBackupDirectory() . $backupName;
+            // Check if download from S3 or local
+            if ($location === 's3' && $this->configuration->isS3Enabled() && $this->s3Storage->isEnabled()) {
+                try {
+                    if ($this->s3Storage->fileExists($backupName)) {
+                        $content = $this->s3Storage->downloadFile($backupName);
+                        $response = new Response($content);
+                        $d = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $backupName);
+                        $response->headers->set('Content-Disposition', $d);
 
-            if ($this->filesystem->exists($zipNameAbsolute)) {
-                $response = new Response(file_get_contents($zipNameAbsolute));
-                $d = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $backupName);
-                $response->headers->set('Content-Disposition', $d);
-
-                return $response;
+                        return $response;
+                    } else {
+                        $this->flashError('backup.action.filename.error');
+                    }
+                } catch (\Exception $e) {
+                    $this->flashError('S3 download error: ' . $e->getMessage());
+                }
             } else {
-                $this->flashError('backup.action.filename.error');
+                // Download from local filesystem
+                $zipNameAbsolute = $this->getBackupDirectory() . $backupName;
+
+                if ($this->filesystem->exists($zipNameAbsolute)) {
+                    $response = new Response(file_get_contents($zipNameAbsolute));
+                    $d = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $backupName);
+                    $response->headers->set('Content-Disposition', $d);
+
+                    return $response;
+                } else {
+                    $this->flashError('backup.action.filename.error');
+                }
             }
         } else {
             $this->flashError('backup.action.filename.error');

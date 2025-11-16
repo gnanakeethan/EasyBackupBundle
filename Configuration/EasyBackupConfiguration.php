@@ -71,4 +71,25 @@ final class EasyBackupConfiguration
 
         return \intval($config);
     }
+
+    public function getS3Path(): string
+    {
+        $config = $this->configuration->find('easy_backup.setting_s3_path');
+
+        if (!\is_string($config)) {
+            return '';
+        }
+
+        return $config;
+    }
+
+    public function isS3Enabled(): bool
+    {
+        $accessKey = $_ENV['S3_ACCESS_KEY'] ?? ($_SERVER['S3_ACCESS_KEY'] ?? null);
+        $secretKey = $_ENV['S3_SECRET_KEY'] ?? ($_SERVER['S3_SECRET_KEY'] ?? null);
+        $bucket = $_ENV['S3_BUCKET'] ?? ($_SERVER['S3_BUCKET'] ?? null);
+        $s3Path = $this->getS3Path();
+
+        return !empty($accessKey) && !empty($secretKey) && !empty($bucket) && !empty($s3Path);
+    }
 }

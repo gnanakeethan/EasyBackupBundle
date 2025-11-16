@@ -45,6 +45,11 @@ class SystemConfigurationSubscriber implements EventSubscriberInterface
                     ->setTranslationDomain('system-configuration')
                     ->setRequired(false)
                     ->setType(TextType::class),
+                (new Configuration('easy_backup.setting_s3_path'))
+                    ->setTranslationDomain('system-configuration')
+                    ->setRequired(false)
+                    ->setType(TextType::class)
+                    ->setOptions(['help' => 'help.easy_backup.setting_s3_path']),
                 (new Configuration('easy_backup.setting_paths_to_backup'))
                     ->setTranslationDomain('system-configuration')
                     ->setRequired(false)
